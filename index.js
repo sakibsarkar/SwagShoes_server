@@ -2,7 +2,7 @@ require('dotenv').config()
 const express = require("express")
 const port = process.env.PORT || 5000
 const app = express()
-
+const jwt = require("jsonwebtoken")
 const cors = require("cors")
 
 app.use(cors({
@@ -18,8 +18,6 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = `mongodb+srv://${process.env.MONGO_USER_NAME}:${process.env.MONGO_PASS}@cluster0.xbiw867.mongodb.net/?retryWrites=true&w=majority`;
 
 
-console.log(process.env.MONGO_PASS);
-
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
     serverApi: {
@@ -32,7 +30,26 @@ const client = new MongoClient(uri, {
 
 
 const shoeCollection = client.db("swagShoes").collection("Shoes")
+const userCollection = client.db("swagShoes").collection("userCollection")
 
+
+
+//  user varify midlewere
+const varifyUser = (req, res, next) => {
+    const token = req.query.token
+    if (!token) {
+        return res.status(401).send({ messege: "unauthorized access" })
+    }
+
+    jwt.verify(token, process.env.TOKEN_SECRET, (err, decode) => {
+        if (err) {
+            return res.status(401).send({ messege: "unauthorized access" })
+        }
+
+        req.user = decode
+        next()
+    })
+}
 
 async function run() {
     try {
@@ -42,6 +59,27 @@ async function run() {
         // await client.db("admin").command({ ping: 1 });
 
 
+
+        // ---------user related api-------------------
+
+        app.get("/api/user/token", async (req, res) => {
+            const email = req.query.email
+            if (!email) {
+                return;
+            }
+
+            const token = jwt.sign(email, process.env.TOKEN_SECRET, {
+                expiresIn: "365d"
+            })
+
+            res.send(token)
+
+
+        })
+
+
+        // --------- shoe realted api's -----------
+        // new arrival shoes
         app.get("/api/newArrival", async (req, res) => {
             const find = { newArrival: true }
 
