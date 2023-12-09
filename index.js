@@ -31,6 +31,7 @@ const client = new MongoClient(uri, {
 
 const shoeCollection = client.db("swagShoes").collection("Shoes")
 const userCollection = client.db("swagShoes").collection("userCollection")
+const cartCollection = client.db("swagShoes").collection("cartCollection")
 
 
 
@@ -62,6 +63,8 @@ async function run() {
 
         // ---------user related api-------------------
 
+
+        // user token
         app.post("/api/user/token", async (req, res) => {
             const email = req.body
             if (!email) {
@@ -76,6 +79,54 @@ async function run() {
 
 
         })
+
+
+        // check is te item is already in user cart
+        app.get("/api/user/check/cart", async (req, res) => {
+            const id = req.query.id
+            const size = parseInt(req.query.size)
+            const result = await cartCollection.findOne({ product_id: id, size: size })
+            if (!result) {
+                return res.send({ isExist: false })
+            }
+
+
+            res.send({ quantity: result.quantity, totalPrice: result.totalPrice, isExist: true, cart_id: result._id })
+        })
+
+
+
+        // update the cart item
+        app.put("/api/update/cart", varifyUser, async (req, res) => {
+            const { quantity, totalPrice, cart_id } = req.body
+
+            const update = {
+                $set: {
+                    quantity: quantity,
+                    totalPrice: totalPrice
+                }
+            }
+            const find = {
+                _id: new ObjectId(cart_id)
+            }
+
+            const result = await cartCollection.updateOne(find, update)
+            res.send(result)
+        })
+
+
+        // add item on cart
+        app.post("/api/user/cart/add", varifyUser, async (req, res) => {
+            const cartData = req.body
+            const result = await cartCollection.insertOne(cartData)
+            return res.send(result)
+        })
+
+
+
+
+
+
 
 
         // --------- shoe realted api's -----------
