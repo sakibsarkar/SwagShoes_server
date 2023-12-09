@@ -14,7 +14,7 @@ app.use(express.json())
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.MONGO_USER_NAME}:${process.env.MONGO_PASS}@cluster0.xbiw867.mongodb.net/?retryWrites=true&w=majority`;
 
 
@@ -89,9 +89,10 @@ async function run() {
             res.send(result)
         })
 
-        // all shoes
 
-        app.get("/api/all/shoes", varifyUser, async (req, res) => {
+
+        // all shoes
+        app.get("/api/all/shoes", async (req, res) => {
             const range = req.query.range
             const currentPage = req.query.currentPage ? req.query.currentPage : 0
             const skip = currentPage * 9
@@ -102,8 +103,6 @@ async function run() {
                 const totalData = await shoeCollection.estimatedDocumentCount()
                 return res.send({ result, totalData })
             }
-
-
 
 
             // for filter price range shoes
@@ -122,6 +121,19 @@ async function run() {
             const result = await shoeCollection.find(find).skip(skip).limit(9).toArray()
             const totalData = (await shoeCollection.find(find).toArray()).length
             res.send({ result, totalData })
+        })
+
+
+        // single shoe details
+        app.get("/api/single/shoe", varifyUser, async (req, res) => {
+            const id = req.query.id
+            if (!id) {
+                return res.send({ messege: "no product id found" })
+            }
+            const find = { _id: new ObjectId(id) }
+
+            const result = await shoeCollection.findOne(find)
+            res.send(result)
         })
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
