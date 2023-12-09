@@ -62,8 +62,8 @@ async function run() {
 
         // ---------user related api-------------------
 
-        app.get("/api/user/token", async (req, res) => {
-            const email = req.query.email
+        app.post("/api/user/token", async (req, res) => {
+            const email = req.body
             if (!email) {
                 return;
             }
@@ -79,12 +79,49 @@ async function run() {
 
 
         // --------- shoe realted api's -----------
+
+
         // new arrival shoes
         app.get("/api/newArrival", async (req, res) => {
             const find = { newArrival: true }
 
             const result = await shoeCollection.find(find).toArray()
             res.send(result)
+        })
+
+        // all shoes
+
+        app.get("/api/all/shoes", varifyUser, async (req, res) => {
+            const range = req.query.range
+            const currentPage = req.query.currentPage ? req.query.currentPage : 0
+            const skip = currentPage * 9
+
+            // for all price range shoes
+            if (range === "all") {
+                const result = await shoeCollection.find().skip(skip).limit(9).toArray()
+                const totalData = await shoeCollection.estimatedDocumentCount()
+                return res.send({ result, totalData })
+            }
+
+
+
+
+            // for filter price range shoes
+            const rangArray = range.split(",")
+            const starRange = parseInt(rangArray[0])
+            const endRange = parseInt(rangArray[1])
+
+
+            const find = {
+                price: {
+                    $gte: starRange,
+                    $lte: endRange
+                }
+            }
+
+            const result = await shoeCollection.find(find).skip(skip).limit(9).toArray()
+            const totalData = (await shoeCollection.find(find).toArray()).length
+            res.send({ result, totalData })
         })
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
