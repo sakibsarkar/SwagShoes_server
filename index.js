@@ -82,10 +82,14 @@ async function run() {
 
 
         // check is te item is already in user cart
-        app.get("/api/user/check/cart", async (req, res) => {
+        app.get("/api/user/check/cart", varifyUser, async (req, res) => {
             const id = req.query.id
+            const email = req.user.email
             const size = parseInt(req.query.size)
-            const result = await cartCollection.findOne({ product_id: id, size: size })
+            if (!id || !email || !size) {
+                return res.send({ messege: "invalid credentials" })
+            }
+            const result = await cartCollection.findOne({ product_id: id, size: size, user_email: email })
             if (!result) {
                 return res.send({ isExist: false })
             }
@@ -120,6 +124,19 @@ async function run() {
             const cartData = req.body
             const result = await cartCollection.insertOne(cartData)
             return res.send(result)
+        })
+
+
+        // email based user cart items
+        app.get("/api/mycart", varifyUser, async (req, res) => {
+            const email = req.user.email
+
+            if (!email) {
+                return
+            }
+
+            const result = await cartCollection.find({ user_email: email }).toArray()
+            res.send(result)
         })
 
 
