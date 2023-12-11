@@ -4,7 +4,7 @@ const port = process.env.PORT || 5000
 const app = express()
 const jwt = require("jsonwebtoken")
 const cors = require("cors")
-
+const stripe = require("stripe")(process.env.STRIPE)
 app.use(cors({
     origin: "http://localhost:5173",
     credentials: true
@@ -15,6 +15,7 @@ app.use(express.json())
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { default: Stripe } = require('stripe')
 const uri = `mongodb+srv://${process.env.MONGO_USER_NAME}:${process.env.MONGO_PASS}@cluster0.xbiw867.mongodb.net/?retryWrites=true&w=majority`;
 
 
@@ -32,6 +33,7 @@ const client = new MongoClient(uri, {
 const shoeCollection = client.db("swagShoes").collection("Shoes")
 const userCollection = client.db("swagShoes").collection("userCollection")
 const cartCollection = client.db("swagShoes").collection("cartCollection")
+const orderCollection = client.db("swagShoes").collection("Orders")
 
 
 
@@ -81,6 +83,8 @@ async function run() {
         })
 
 
+        // --------user cart related api-----------
+
         // check is te item is already in user cart
         app.get("/api/user/check/cart", varifyUser, async (req, res) => {
             const id = req.query.id
@@ -124,6 +128,19 @@ async function run() {
             const cartData = req.body
             const result = await cartCollection.insertOne(cartData)
             return res.send(result)
+        })
+
+        // remove item From cart
+
+        app.delete("/api/user/cart/delete", varifyUser, async (req, res) => {
+            const id = req.query.id
+            const find = {
+                _id: new ObjectId(id),
+                user_email: req.user.email
+            }
+
+            const result = await cartCollection.deleteOne(find)
+            res.send(result)
         })
 
 
@@ -201,6 +218,38 @@ async function run() {
             const find = { _id: new ObjectId(id) }
 
             const result = await shoeCollection.findOne(find)
+            res.send(result)
+        })
+
+
+
+        // ---------- stripe payment related api---------
+
+        app.post("/api/stripe/payment", varifyUser, async (req, res) => {
+            const { price } = req.body
+            if (!price) {
+                return
+            }
+
+            const ammount = parseInt(price) * 100
+            const { client_secret } = await stripe.paymentIntents.create({
+                amount: ammount,
+                currency: "usd",
+                payment_method_types: ["card"]
+            })
+
+
+            res.send({ client_secret })
+        })
+
+
+
+        // ------ oder related api----------
+        app.post("/api/new/order", varifyUser, async (req, res) => {
+            const obj = req.body
+
+
+            const result = await orderCollection.insertOne(obj)
             res.send(result)
         })
 
