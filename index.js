@@ -245,11 +245,39 @@ async function run() {
 
 
         // ------ oder related api----------
+
+
+        // add item on order list
         app.post("/api/new/order", varifyUser, async (req, res) => {
             const obj = req.body
 
 
             const result = await orderCollection.insertOne(obj)
+            res.send(result)
+        })
+
+        // get ordered items (user based)
+
+        app.get("/api/myOrders", varifyUser, async (req, res) => {
+            const { email } = req.user
+            if (!email) {
+                return res.send({ messege: "no email found" })
+
+            }
+
+            const find = { user_email: email }
+            const result = await orderCollection.find(find).toArray()
+
+            res.send(result)
+
+
+        })
+
+        // pending order cancel api
+        app.delete("/api/cancel/order", varifyUser, async (req, res) => {
+            const id = req.query.id
+            const find = { _id: new ObjectId(id) }
+            const result = await orderCollection.deleteOne(find)
             res.send(result)
         })
 
