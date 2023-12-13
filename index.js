@@ -63,6 +63,55 @@ async function run() {
 
 
 
+
+
+        // ---varify admin midlewerer -----------
+
+        const varifyAdmin = async (req, res, next) => {
+            const email = req?.user?.email
+            if (!email) {
+                return res.send({ message: "can't authorized admin email" })
+
+            }
+
+            const result = await userCollection.findOne({ email: email })
+            if (!result || result?.role !== "admin") {
+                return res.status(401).send({ message: "forbiden acces" })
+            }
+
+            next()
+        }
+
+
+
+
+        //------ admin related api -------------
+
+
+        // get order statistics
+        app.get("/api/order/statistics", varifyUser, varifyAdmin, async (req, res) => {
+            const result = await orderCollection.find().toArray()
+            res.send(result)
+        })
+
+
+        // total pending orders
+        app.get("/api/order/pending", varifyUser, varifyAdmin, async (req, res) => {
+            const result = await orderCollection.find({ status: "pending" }).toArray()
+            res.send({ pending: result.length })
+        })
+
+
+        // total shipped order 
+        app.get("/api/order/shipped", async (req, res) => {
+            const result = await orderCollection.find({ status: "shiped" }).toArray()
+            res.send({ shipped: result.length })
+        })
+
+
+
+
+
         // ---------user related api-------------------
 
 
@@ -79,6 +128,39 @@ async function run() {
 
             res.send(token)
 
+
+        })
+
+
+        // -------- add user details after authentication
+        app.put("/api/addUser", varifyUser, async (req, res) => {
+            const { email } = req.user
+            const userData = req.body
+            const isExist = await userCollection.findOne({ email: email })
+            if (isExist) {
+                return res.send({ isExist: true })
+            }
+
+            const result = await userCollection.insertOne(userData)
+            res.send(result)
+
+        })
+
+
+
+        // getUser role
+        app.get("/api/user/role", varifyUser, async (req, res) => {
+
+            // user email seted by varifyUser midlewere
+            const email = req.user.email
+            const result = await userCollection.findOne({ email: email }, {
+                projection: {
+                    _id: 0,
+                    role: 1
+                }
+            })
+
+            res.send(result)
 
         })
 
