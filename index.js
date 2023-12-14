@@ -165,6 +165,28 @@ async function run() {
         })
 
 
+        app.put("/api/cancel/requestResponse", varifyUser, varifyAdmin, async (req, res) => {
+            const { action, req_id, cartId } = req.body
+            if (action == "accepted") {
+                const deleteRequest = await cancelOrderCollection.deleteOne({ _id: new ObjectId(req_id) })
+                const deleteUserOrderList = await orderCollection.deleteOne({ _id: new ObjectId(cartId) })
+                res.send({ message: "success" })
+                return
+            }
+
+            if (action === "rejected") {
+                const deleteRequest = await cancelOrderCollection.deleteOne({ _id: new ObjectId(req_id) })
+                res.send(deleteRequest)
+            }
+
+            else {
+                res.send({ message: "incomplete mission" })
+            }
+
+
+        })
+
+
 
 
 
