@@ -158,6 +158,17 @@ async function run() {
 
 
 
+        // get all cancel request
+        app.get("/api/cancel/request", varifyUser, varifyAdmin, async (req, res) => {
+            const result = await cancelOrderCollection.find().toArray()
+            res.send(result)
+        })
+
+
+
+
+
+
         // ---------user related api-------------------
 
 
@@ -401,13 +412,31 @@ async function run() {
 
         })
 
-        // pending order cancel api
+        // cart pending order cancel api
         app.delete("/api/cancel/order", varifyUser, async (req, res) => {
             const id = req.query.id
             const find = { _id: new ObjectId(id) }
             const result = await orderCollection.deleteOne(find)
             res.send(result)
         })
+
+        // request for cancel order
+
+        app.post("/api/request/for/cancel", varifyUser, async (req, res) => {
+            const body = req.body
+            const id = req.query.id
+
+            const check = await cancelOrderCollection.findOne({ requestId: id })
+            if (check) {
+                return res.send({ exist: true })
+            }
+
+            const result = await cancelOrderCollection.insertOne(body)
+            res.send(result)
+        })
+
+
+
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
