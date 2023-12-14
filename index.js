@@ -34,6 +34,7 @@ const shoeCollection = client.db("swagShoes").collection("Shoes")
 const userCollection = client.db("swagShoes").collection("userCollection")
 const cartCollection = client.db("swagShoes").collection("cartCollection")
 const orderCollection = client.db("swagShoes").collection("Orders")
+const cancelOrderCollection = client.db("swagShoes").collection("cancelRequest")
 
 
 
@@ -104,11 +105,56 @@ async function run() {
 
         // total shipped order 
         app.get("/api/order/shipped", async (req, res) => {
-            const result = await orderCollection.find({ status: "shiped" }).toArray()
+            const result = await orderCollection.find({ status: "shipped" }).toArray()
             res.send({ shipped: result.length })
         })
 
 
+        // change order status
+        app.put("/api/order/status", varifyUser, varifyAdmin, async (req, res) => {
+            const { status, orderId } = req.body
+            if (!status) {
+                return
+            }
+
+            if (status === "pending") {
+                const result = await orderCollection.updateOne(
+                    { _id: new ObjectId(orderId) },
+                    {
+                        $set: {
+                            status: "Ready to ship"
+                        }
+                    }
+                )
+                return res.send(result)
+            }
+            if (status === "Ready to ship") {
+                const result = await orderCollection.updateOne(
+                    { _id: new ObjectId(orderId) },
+                    {
+                        $set: {
+                            status: "shipped"
+                        }
+                    }
+                )
+                return res.send(result)
+            }
+        })
+
+
+
+
+        // shipped product price 
+        app.get("/api/shipped/price", varifyUser, varifyAdmin, async (req, res) => {
+            const result = await orderCollection.find({ status: "shipped" }, {
+                projection: {
+                    _id: 0,
+                    price: 1
+                }
+            }).toArray()
+
+            res.send(result)
+        })
 
 
 
