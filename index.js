@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken")
 const cors = require("cors")
 const stripe = require("stripe")(process.env.STRIPE)
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: ["https://swagshoes-a81f7.web.app", "https://swagshoes-a81f7.firebaseapp.com", "http://localhost:5173"],
     credentials: true
 }))
 
@@ -335,7 +335,12 @@ async function run() {
             res.send(result)
         })
 
+        app.post("/api/newArrival", async (req, res) => {
+            const find = { newArrival: true }
 
+            const result = await shoeCollection.find(find).toArray()
+            res.send(result)
+        })
 
         // all shoes
         app.get("/api/all/shoes", async (req, res) => {
@@ -457,6 +462,34 @@ async function run() {
             res.send(result)
         })
 
+
+
+
+        // ------product search related api-------------
+
+        // product search by keywords
+        app.get("/api/search/shoes", async (req, res) => {
+            const searchValue = req.query.searchValue
+
+            const find = {
+                name: { $regex: new RegExp(searchValue, "i") }
+            }
+            const result = await shoeCollection.find(find).toArray()
+            res.send(result)
+        })
+
+
+        // all shoe names
+
+        app.get("/api/shoe/names", async (req, res) => {
+            const projection = {
+                _id: 0,
+                name: 1
+            }
+
+            const result = await shoeCollection.find({}, { projection }).toArray()
+            res.send(result)
+        })
 
 
 
