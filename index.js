@@ -345,28 +345,45 @@ async function run() {
         // all shoes
         app.get("/api/all/shoes", async (req, res) => {
             const range = req.query.range
+            const rating = req.query.rating
+            const isCoupon = req.query.isCoupon
             const currentPage = req.query.currentPage ? req.query.currentPage : 0
             const skip = currentPage * 9
 
-            // for all price range shoes
-            if (range === "all") {
-                const result = await shoeCollection.find().skip(skip).limit(9).toArray()
-                const totalData = await shoeCollection.estimatedDocumentCount()
-                return res.send({ result, totalData })
-            }
+
+
+            // all price range shoes and has coupon
 
 
             // for filter price range shoes
             const rangArray = range.split(",")
             const starRange = parseInt(rangArray[0])
             const endRange = parseInt(rangArray[1])
-
-
-            const find = {
+            let find = {
                 price: {
                     $gte: starRange,
                     $lte: endRange
                 }
+            }
+
+            if (rating !== "all") {
+                const numberRating = parseInt(rating)
+                let replica = {
+                    ...find, ratings: {
+                        $not: {
+                            $gt: numberRating,
+                            $lt: numberRating + 1
+                        }
+                    }
+                }
+                find = replica
+
+            }
+
+
+            if (isCoupon === "true") {
+                let replica = { ...find, coupon: { $ne: null } }
+                find = replica
             }
 
             const result = await shoeCollection.find(find).skip(skip).limit(9).toArray()
@@ -470,12 +487,39 @@ async function run() {
         // product search by keywords
         app.get("/api/search/shoes", async (req, res) => {
             const searchValue = req.query.searchValue
+            const order = req.query.order
+            const isCoupon = req.query.isCoupon
 
-            const find = {
+            let find = {
                 name: { $regex: new RegExp(searchValue, "i") }
             }
-            const result = await shoeCollection.find(find).toArray()
-            res.send(result)
+
+            if (isCoupon === "true") {
+                find = {
+                    name: { $regex: new RegExp(searchValue, "i") },
+                    coupon: { $ne: null }
+                }
+            }
+
+
+            if (!order) {
+                const result = await shoeCollection.find(find).toArray()
+                return res.send(result)
+
+            }
+
+
+            // descending order
+            if (order === "dec") {
+                const result = await shoeCollection.find(find).sort({ ["price"]: -1 }).toArray()
+                return res.send(result)
+            }
+
+            if (order === "acc") {
+                const result = await shoeCollection.find(find).sort({ ["price"]: 1 }).toArray()
+                return res.send(result)
+            }
+
         })
 
 
