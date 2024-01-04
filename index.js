@@ -370,10 +370,8 @@ async function run() {
                 const numberRating = parseInt(rating)
                 let replica = {
                     ...find, ratings: {
-                        $not: {
-                            $gt: numberRating,
-                            $lt: numberRating + 1
-                        }
+                        $gte: numberRating,
+                        $lt: numberRating + 1
                     }
                 }
                 find = replica
@@ -497,7 +495,7 @@ async function run() {
             if (isCoupon === "true") {
                 find = {
                     name: { $regex: new RegExp(searchValue, "i") },
-                    coupon: { $ne: null }
+                    coupon: { $ne: nul }
                 }
             }
 
