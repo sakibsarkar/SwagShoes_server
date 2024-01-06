@@ -495,7 +495,7 @@ async function run() {
             if (isCoupon === "true") {
                 find = {
                     name: { $regex: new RegExp(searchValue, "i") },
-                    coupon: { $ne: nul }
+                    coupon: { $ne: null }
                 }
             }
 
