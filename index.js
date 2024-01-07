@@ -344,12 +344,12 @@ async function run() {
 
         // all shoes
         app.get("/api/all/shoes", async (req, res) => {
-            const range = req.query.range
+            const range = req.query.range || "0,999999"
             const rating = req.query.rating
             const isCoupon = req.query.isCoupon
             const currentPage = req.query.currentPage ? req.query.currentPage : 0
-            const skip = currentPage * 9
-
+            const limit = req.query.limit ? parseInt(req.query.limit) : 9
+            const skip = currentPage * limit
 
 
             // all price range shoes and has coupon
@@ -366,7 +366,7 @@ async function run() {
                 }
             }
 
-            if (rating !== "all") {
+            if (rating !== "all" && rating !== undefined) {
                 const numberRating = parseInt(rating)
                 let replica = {
                     ...find, ratings: {
@@ -384,7 +384,7 @@ async function run() {
                 find = replica
             }
 
-            const result = await shoeCollection.find(find).skip(skip).limit(9).toArray()
+            const result = await shoeCollection.find(find).skip(skip).limit(limit).toArray()
             const totalData = (await shoeCollection.find(find).toArray()).length
             res.send({ result, totalData })
         })
@@ -400,6 +400,35 @@ async function run() {
 
             const result = await shoeCollection.findOne(find)
             res.send(result)
+        })
+
+
+        // shoe (product) update
+        app.put("/api/product/update", varifyUser, varifyAdmin, async (req, res) => {
+            let { id, name, coupon, discountPercentage, price } = req.body
+            if (!coupon) {
+                coupon = null
+            }
+            if (!discountPercentage) {
+                discountPercentage = null
+            }
+
+            if (discountPercentage) {
+                discountPercentage = parseInt(discountPercentage)
+            }
+
+            const find = { _id: new ObjectId(id) }
+            const update = {
+                $set: {
+                    name,
+                    coupon,
+                    discountPercentage,
+                    price: parseFloat(price)
+                }
+            }
+            const result = await shoeCollection.updateOne(find, update)
+            res.send(result)
+
         })
 
 
