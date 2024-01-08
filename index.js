@@ -432,6 +432,23 @@ async function run() {
         })
 
 
+        // add shoe (product)
+
+        app.post("/api/add/product", varifyUser, varifyAdmin, async (req, res) => {
+            let data = req.body
+            data.price = parseFloat(data.price)
+            const result = await shoeCollection.insertOne(data)
+            res.send(result)
+        })
+
+        // delete shoe
+        app.delete("/api/delete/product", varifyUser, varifyAdmin, async (req, res) => {
+            const id = req.query.id
+            const result = await shoeCollection.deleteOne({ _id: new ObjectId(id) })
+            res.send(result)
+        })
+
+
 
         // ---------- stripe payment related api---------
 
